@@ -10,7 +10,7 @@
     "check": "node --check src/main.js && node --check src/core.js && node --check src/preload.js && node --check src/renderer.js && node --check src/player.js",
     "test": "node test/core.test.js",
     "verify": "npm run check && npm test",
-    "dist": "electron-builder --win nsis portable",
+    "dist": "electron-builder --win nsis portable --publish never",
     "dist:dir": "electron-builder --dir"
   },
   "devDependencies": {
