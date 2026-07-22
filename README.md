@@ -68,6 +68,20 @@ npm start
 npm run check
 ```
 
+自動テスト:
+
+```powershell
+npm test
+```
+
+構文チェックとテストをまとめて実行:
+
+```powershell
+npm run verify
+```
+
+GitHub Actionsでも、`main` へのpushとPull Requestごとに自動実行されます。
+
 Windowsインストーラーとポータブル版の生成:
 
 ```powershell

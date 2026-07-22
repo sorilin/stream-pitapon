@@ -3,9 +3,11 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const {
+  IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, mediaType, normalizeSettings,
+  nextItemId, parseByteRange, isSafeMediaName
+} = require('./core');
 
-const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif']);
-const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov', '.m4v', '.ogv']);
 const DEFAULT_STATE = {
   items: [], currentId: null, width: 1920, height: 1080,
   imageDuration: 8, autoAdvance: false, loopPlaylist: true,
@@ -52,13 +54,6 @@ function updateState(patch) {
   return publicState();
 }
 
-function mediaType(filePath) {
-  const extension = path.extname(filePath).toLowerCase();
-  if (IMAGE_EXTENSIONS.has(extension)) return 'image';
-  if (VIDEO_EXTENSIONS.has(extension)) return 'video';
-  return null;
-}
-
 function uniqueTarget(source) {
   const extension = path.extname(source).toLowerCase();
   return `${crypto.randomUUID()}${extension}`;
@@ -89,17 +84,17 @@ function contentType(fileName) {
 }
 
 function serveMedia(req, res, fileName) {
-  const safeName = path.basename(fileName);
+  if (!isSafeMediaName(fileName)) { res.writeHead(400); res.end(); return; }
+  const safeName = fileName;
   const filePath = path.join(mediaDir(), safeName);
   if (!fs.existsSync(filePath)) { res.writeHead(404); res.end(); return; }
   const stat = fs.statSync(filePath);
   const range = req.headers.range;
   const headers = { 'Content-Type': contentType(safeName), 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' };
   if (range) {
-    const [startText, endText] = range.replace(/bytes=/, '').split('-');
-    const start = Number(startText);
-    const end = endText ? Number(endText) : stat.size - 1;
-    if (!Number.isFinite(start) || start > end || end >= stat.size) { res.writeHead(416); res.end(); return; }
+    const parsed = parseByteRange(range, stat.size);
+    if (!parsed) { res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` }); res.end(); return; }
+    const { start, end } = parsed;
     res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Content-Length': end - start + 1 });
     fs.createReadStream(filePath, { start, end }).pipe(res);
   } else {
@@ -127,9 +122,8 @@ function startServer() {
       req.on('close', () => eventClients.delete(res));
     } else if (url.pathname === '/advance' && req.method === 'POST') {
       if (state.items.length && state.autoAdvance) {
-        let index = state.items.findIndex((item) => item.id === state.currentId) + 1;
-        if (index >= state.items.length) index = state.loopPlaylist ? 0 : state.items.length - 1;
-        if (state.items[index]?.id !== state.currentId) updateState({ currentId: state.items[index].id });
+        const nextId = nextItemId(state.items, state.currentId, 1, state.loopPlaylist);
+        if (nextId !== state.currentId) updateState({ currentId: nextId });
       }
       res.writeHead(204, { 'Access-Control-Allow-Origin': '*' }); res.end();
     } else if (url.pathname.startsWith('/media/')) {
@@ -159,7 +153,7 @@ ipcMain.handle('choose-files', async () => {
 });
 ipcMain.handle('add-files', (_event, paths) => addFiles(paths));
 ipcMain.handle('select-item', (_event, id) => updateState({ currentId: id }));
-ipcMain.handle('update-settings', (_event, settings) => updateState(settings));
+ipcMain.handle('update-settings', (_event, settings) => updateState(normalizeSettings(settings, state)));
 ipcMain.handle('reorder-items', (_event, ids) => {
   const lookup = new Map(state.items.map((item) => [item.id, item]));
   state.items = ids.map((id) => lookup.get(id)).filter(Boolean);
@@ -174,12 +168,8 @@ ipcMain.handle('remove-item', (_event, id) => {
 });
 ipcMain.handle('clear-display', () => updateState({ currentId: null }));
 ipcMain.handle('advance', (_event, direction = 1) => {
-  if (!state.items.length) return publicState();
-  let index = state.items.findIndex((item) => item.id === state.currentId);
-  index = index < 0 ? 0 : index + direction;
-  if (state.loopPlaylist) index = (index + state.items.length) % state.items.length;
-  else index = Math.max(0, Math.min(state.items.length - 1, index));
-  return updateState({ currentId: state.items[index].id });
+  const id = nextItemId(state.items, state.currentId, direction, state.loopPlaylist);
+  return id ? updateState({ currentId: id }) : publicState();
 });
 
 app.whenReady().then(async () => { loadState(); await startServer(); createWindow(); });
