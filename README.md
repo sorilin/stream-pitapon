@@ -1,5 +1,7 @@
 # 配信ピタポン
 
+<p align="center"><img src="assets/icon.png" alt="配信ピタポン アイコン" width="160"></p>
+
 画像も動画も、OBSの枠へピタッと。ドロップするだけで、固定枠内へアスペクト比を保ったまま全体表示するWindowsアプリです。素材ごとにOBSでサイズを直す必要がありません。
 
 日本語 | [English](#english)
