@@ -74,4 +74,5 @@ test('isSafeMediaName blocks directory traversal', () => {
   assert.equal(isSafeMediaName('folder/file.png'), false);
   assert.equal(isSafeMediaName('folder\\file.png'), false);
   assert.equal(isSafeMediaName(''), false);
+  assert.equal(isSafeMediaName('bad\0name.png'), false);
 });

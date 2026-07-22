@@ -1,4 +1,6 @@
 const stage = document.querySelector('#stage');
+const sessionToken = new URLSearchParams(location.search).get('token') || '';
+const withToken = (pathname) => `${pathname}?token=${encodeURIComponent(sessionToken)}`;
 let currentId = null;
 let advanceTimer = null;
 let lastAdvanceId = null;
@@ -6,7 +8,7 @@ let lastAdvanceId = null;
 function requestAdvance(id) {
   if (lastAdvanceId === id) return;
   lastAdvanceId = id;
-  fetch('/advance', { method: 'POST' }).catch(() => {});
+  fetch(withToken('/advance'), { method: 'POST' }).catch(() => {});
 }
 
 function show(state) {
@@ -26,7 +28,7 @@ function show(state) {
     return;
   }
   const media = document.createElement(item.type === 'video' ? 'video' : 'img');
-  media.src = `/media/${encodeURIComponent(item.fileName)}`;
+  media.src = withToken(`/media/${encodeURIComponent(item.fileName)}`);
   media.alt = item.name;
   if (item.type === 'video') {
     media.autoplay = true; media.playsInline = true; media.muted = state.muted; media.volume = state.volume;
@@ -40,5 +42,5 @@ function show(state) {
   if (previous) { previous.classList.remove('visible'); setTimeout(() => previous.remove(), state.transitionMs + 50); }
 }
 
-const events = new EventSource('/events');
+const events = new EventSource(withToken('/events'));
 events.onmessage = (event) => show(JSON.parse(event.data));

@@ -17,6 +17,7 @@ const DEFAULT_STATE = {
 let mainWindow;
 let server;
 let port;
+let sessionToken;
 let state = { ...DEFAULT_STATE };
 const eventClients = new Set();
 
@@ -38,7 +39,7 @@ function saveState() {
 }
 
 function publicState() {
-  return { ...state, displayUrl: `http://127.0.0.1:${port}/player` };
+  return { ...state, displayUrl: `http://127.0.0.1:${port}/player?token=${sessionToken}` };
 }
 
 function broadcast() {
@@ -104,9 +105,14 @@ function serveMedia(req, res, fileName) {
 }
 
 function startServer() {
+  sessionToken = crypto.randomBytes(24).toString('hex');
   server = http.createServer((req, res) => {
-    const url = new URL(req.url, 'http://127.0.0.1');
+    let url;
+    try { url = new URL(req.url, 'http://127.0.0.1'); }
+    catch { res.writeHead(400); res.end(); return; }
+    const authorized = url.searchParams.get('token') === sessionToken;
     if (url.pathname === '/player' || url.pathname === '/') {
+      if (!authorized) { res.writeHead(403); res.end('Forbidden'); return; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       fs.createReadStream(path.join(__dirname, 'player.html')).pipe(res);
     } else if (url.pathname === '/player.css') {
@@ -116,18 +122,24 @@ function startServer() {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
       fs.createReadStream(path.join(__dirname, 'player.js')).pipe(res);
     } else if (url.pathname === '/events') {
-      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'Access-Control-Allow-Origin': '*' });
+      if (!authorized) { res.writeHead(403); res.end(); return; }
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
       res.write(`data: ${JSON.stringify(publicState())}\n\n`);
       eventClients.add(res);
       req.on('close', () => eventClients.delete(res));
     } else if (url.pathname === '/advance' && req.method === 'POST') {
+      if (!authorized) { res.writeHead(403); res.end(); return; }
       if (state.items.length && state.autoAdvance) {
         const nextId = nextItemId(state.items, state.currentId, 1, state.loopPlaylist);
         if (nextId !== state.currentId) updateState({ currentId: nextId });
       }
-      res.writeHead(204, { 'Access-Control-Allow-Origin': '*' }); res.end();
+      res.writeHead(204); res.end();
     } else if (url.pathname.startsWith('/media/')) {
-      serveMedia(req, res, decodeURIComponent(url.pathname.slice(7)));
+      if (!authorized) { res.writeHead(403); res.end(); return; }
+      let fileName;
+      try { fileName = decodeURIComponent(url.pathname.slice(7)); }
+      catch { res.writeHead(400); res.end(); return; }
+      serveMedia(req, res, fileName);
     } else { res.writeHead(404); res.end(); }
   });
   return new Promise((resolve, reject) => {
