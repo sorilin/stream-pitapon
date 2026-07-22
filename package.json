@@ -1,6 +1,6 @@
 {
   "name": "obs-media-frame",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "画像や動画をポンと入れてOBSの固定枠に表示するアプリ。",
   "main": "src/main.js",
   "author": "配信ピタポン contributors",
