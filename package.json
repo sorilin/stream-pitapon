@@ -36,14 +36,14 @@
       ]
     },
     "nsis": {
-      "artifactName": "${productName}-${version}-${arch}-Setup.${ext}",
+      "artifactName": "Stream-PitaPon-${version}-${arch}-Setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     },
     "portable": {
-      "artifactName": "${productName}-${version}-${arch}-Portable.${ext}"
+      "artifactName": "Stream-PitaPon-${version}-${arch}-Portable.${ext}"
     }
   }
 }

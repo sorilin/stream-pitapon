@@ -90,6 +90,8 @@ npm run dist
 
 成果物は `release` フォルダに作成されます。
 
+配布ファイル名は、日本語名を正しく扱えない環境との互換性を考慮して `Stream-PitaPon-...exe` になります。インストール後のアプリ表示名は「配信ピタポン」です。
+
 ## GitHub Releases
 
 `v0.1.0` のようなタグをGitHubへpushすると、GitHub ActionsがWindows版をビルドしてReleaseへインストーラーとポータブル版を添付します。
