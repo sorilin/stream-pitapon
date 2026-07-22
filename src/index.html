@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>配信ピタポン</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <div><span class="eyebrow">画像も動画も、OBSの枠へピタッと。</span><h1>配信ピタポン</h1></div>
+    <button id="settingsButton" class="ghost">表示設定</button>
+  </header>
+  <main>
+    <section class="setup card">
+      <div><span class="step">1</span><div><h2>OBSに表示枠を追加</h2><p>ブラウザソースのURLへ貼り付けてください。</p></div></div>
+      <div class="url-row"><code id="displayUrl">起動中...</code><button id="copyUrl">コピー</button></div>
+      <p class="hint">OBSの幅と高さも、右の設定値と同じにしてください。</p>
+    </section>
+
+    <section id="dropZone" class="drop-zone">
+      <div class="drop-icon">＋</div>
+      <h2>画像・動画をここへドロップ</h2>
+      <p>素材はアプリ内へコピーされ、最後に追加した素材がすぐ表示されます。</p>
+      <button id="browseButton">ファイルを選択</button>
+    </section>
+
+    <section class="playlist card">
+      <div class="section-head"><div><h2>素材リスト</h2><p id="itemCount">0件</p></div><button id="clearButton" class="ghost">表示を空にする</button></div>
+      <div class="controls"><button id="previousButton" class="ghost">← 前へ</button><button id="nextButton">次へ →</button></div>
+      <div id="emptyState" class="empty">素材を追加するとここに一覧表示されます。</div>
+      <ul id="items"></ul>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog">
+    <form method="dialog">
+      <div class="dialog-head"><h2>表示設定</h2><button value="cancel" class="icon-button" aria-label="閉じる">×</button></div>
+      <div class="field-grid">
+        <label>幅（px）<input id="widthInput" type="number" min="100" max="7680"></label>
+        <label>高さ（px）<input id="heightInput" type="number" min="100" max="4320"></label>
+        <label>画像の表示秒数<input id="durationInput" type="number" min="1" max="3600"></label>
+        <label>切り替え時間（ms）<input id="transitionInput" type="number" min="0" max="3000"></label>
+      </div>
+      <label class="check"><input id="autoInput" type="checkbox"> 自動で次の素材へ進む</label>
+      <label class="check"><input id="loopInput" type="checkbox"> リストの最後から先頭へ戻る</label>
+      <label class="check"><input id="mutedInput" type="checkbox"> 動画をミュートする</label>
+      <label>動画音量 <span id="volumeValue"></span><input id="volumeInput" type="range" min="0" max="1" step="0.05"></label>
+      <div class="dialog-actions"><button value="cancel" class="ghost">キャンセル</button><button id="saveSettings" value="default">保存</button></div>
+    </form>
+  </dialog>
+  <div id="toast" role="status"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>
